@@ -87,6 +87,8 @@ import org.apache.paimon.shade.guava30.com.google.common.collect.ImmutableMap;
 import org.apache.paimon.shade.guava30.com.google.common.collect.Maps;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
@@ -121,6 +123,8 @@ import static org.apache.paimon.utils.ThreadPoolUtils.createScheduledThreadPool;
 
 /** A catalog implementation for REST. */
 public class RESTCatalog implements Catalog {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RESTCatalog.class);
 
     public static final String HEADER_PREFIX = "header.";
     public static final String MAX_RESULTS = "maxResults";
@@ -466,6 +470,7 @@ public class RESTCatalog implements Catalog {
     }
 
     private TableMetadata toTableMetadata(String db, GetTableResponse response) {
+        long startTime = System.currentTimeMillis();
         TableSchema schema = TableSchema.create(response.getSchemaId(), response.getSchema());
         Map<String, String> options = new HashMap<>(schema.options());
         options.put(PATH.key(), response.getPath());
@@ -474,7 +479,11 @@ public class RESTCatalog implements Catalog {
         if (identifier.getBranchName() != null) {
             options.put(BRANCH.key(), identifier.getBranchName());
         }
-        return new TableMetadata(schema.copy(options), response.isExternal(), response.getId());
+        TableMetadata metadata =
+                new TableMetadata(schema.copy(options), response.isExternal(), response.getId());
+        long endTime = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] toTableMetadata cost {} ms", endTime - startTime);
+        return metadata;
     }
 
     private Table toTable(String db, GetTableResponse response) {
@@ -970,9 +979,15 @@ public class RESTCatalog implements Catalog {
     }
 
     private FileIO fileIOForData(Path path, Identifier identifier) {
-        return dataTokenEnabled
-                ? new RESTTokenFileIO(catalogLoader(), this, identifier, path)
-                : fileIOFromOptions(path);
+        long start = System.currentTimeMillis();
+
+        FileIO fileIO =
+                dataTokenEnabled
+                        ? new RESTTokenFileIO(catalogLoader(), this, identifier, path)
+                        : fileIOFromOptions(path);
+        long end = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] new RESTTokenFileIO cost {} ms", start - end);
+        return fileIO;
     }
 
     private FileIO fileIOFromOptions(Path path) {

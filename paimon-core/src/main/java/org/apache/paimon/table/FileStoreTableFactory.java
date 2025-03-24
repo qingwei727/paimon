@@ -27,6 +27,9 @@ import org.apache.paimon.schema.SchemaManager;
 import org.apache.paimon.schema.TableSchema;
 import org.apache.paimon.utils.StringUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Optional;
@@ -36,6 +39,8 @@ import static org.apache.paimon.utils.Preconditions.checkArgument;
 
 /** Factory to create {@link FileStoreTable}. */
 public class FileStoreTableFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FileStoreTableFactory.class);
 
     public static FileStoreTable create(CatalogContext context) {
         FileIO fileIO;
@@ -87,9 +92,12 @@ public class FileStoreTableFactory {
             TableSchema tableSchema,
             Options dynamicOptions,
             CatalogEnvironment catalogEnvironment) {
+        long start = System.currentTimeMillis();
         FileStoreTable table =
                 createWithoutFallbackBranch(
                         fileIO, tablePath, tableSchema, dynamicOptions, catalogEnvironment);
+        long end = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] FileStoreTableFactory.create cost {} ms", start - end);
 
         Options options = new Options(table.options());
         String fallbackBranch = options.get(CoreOptions.SCAN_FALLBACK_BRANCH);

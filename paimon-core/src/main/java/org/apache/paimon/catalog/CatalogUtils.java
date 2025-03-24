@@ -39,6 +39,9 @@ import org.apache.paimon.table.system.SystemTableLoader;
 import org.apache.paimon.utils.InternalRowPartitionComputer;
 import org.apache.paimon.utils.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -59,6 +62,8 @@ import static org.apache.paimon.utils.Preconditions.checkArgument;
 
 /** Utils for {@link Catalog}. */
 public class CatalogUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CatalogUtils.class);
 
     public static Path path(String warehouse, String database, String table) {
         return new Path(String.format("%s/%s.db/%s", warehouse, database, table));
@@ -174,11 +179,18 @@ public class CatalogUtils {
             @Nullable CatalogLockFactory lockFactory,
             @Nullable CatalogLockContext lockContext)
             throws Catalog.TableNotExistException {
+        long start = System.currentTimeMillis();
         if (SYSTEM_DATABASE_NAME.equals(identifier.getDatabaseName())) {
             return CatalogUtils.createGlobalSystemTable(identifier.getTableName(), catalog);
         }
+        long end = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] createGlobalSystemTable cost {} ms", start - end);
 
+        start = System.currentTimeMillis();
         TableMetadata metadata = metadataLoader.load(identifier);
+        end = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] metadataLoader.load cost {} ms", start - end);
+
         TableSchema schema = metadata.schema();
         CoreOptions options = CoreOptions.fromMap(schema.options());
 
@@ -188,6 +200,7 @@ public class CatalogUtils {
             return toFormatTable(identifier, schema, dataFileIO);
         }
 
+        start = System.currentTimeMillis();
         CatalogEnvironment catalogEnv =
                 new CatalogEnvironment(
                         identifier,
@@ -197,8 +210,13 @@ public class CatalogUtils {
                         lockContext,
                         catalog.supportsVersionManagement());
         Path path = new Path(schema.options().get(PATH.key()));
+        end = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] new CatalogEnvironment cost {} ms", start - end);
+
+        start = System.currentTimeMillis();
         FileStoreTable table =
                 FileStoreTableFactory.create(dataFileIO.apply(path), path, schema, catalogEnv);
+        LOG.info("[loadTable-debug] FileStoreTableFactory.create cost {} ms", start - end);
 
         if (options.type() == TableType.OBJECT_TABLE) {
             table = toObjectTable(externalFileIO, table);
