@@ -28,6 +28,8 @@ import org.apache.paimon.rest.RESTCatalogOptions;
 import org.apache.paimon.rest.auth.AuthProviderEnum;
 import org.apache.paimon.utils.StringUtils;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.ReadableConfig;
@@ -40,6 +42,8 @@ import static org.apache.paimon.flink.FlinkCatalogOptions.DEFAULT_DATABASE;
 
 /** Factory for {@link FlinkCatalog}. */
 public class FlinkCatalogFactory implements org.apache.flink.table.factories.CatalogFactory {
+
+    private static final Log LOG = LogFactory.getLog(FlinkCatalogFactory.class);
 
     public static final String IDENTIFIER = "qingwei-debug";
 
@@ -73,11 +77,11 @@ public class FlinkCatalogFactory implements org.apache.flink.table.factories.Cat
 
     @Override
     public FlinkCatalog createCatalog(Context context) {
-        forwardDlfOptions(context.getConfiguration(), Options.fromMap(context.getOptions()));
+        Options options = Options.fromMap(context.getOptions());
+        forwardDlfOptions(context.getConfiguration(), options);
         return createCatalog(
                 context.getName(),
-                CatalogContext.create(
-                        Options.fromMap(context.getOptions()), new FlinkFileIOLoader()),
+                CatalogContext.create(options, new FlinkFileIOLoader()),
                 context.getClassLoader());
     }
 
@@ -107,8 +111,8 @@ public class FlinkCatalogFactory implements org.apache.flink.table.factories.Cat
     }
 
     public static void forwardDlfOptions(ReadableConfig flinkConfig, Options catalogOptions) {
-        //        LOG.info("Adding option for dlf-paimon catalog");
-        //        LOG.info("forwardDlfOptions " + flinkConfig);
+        LOG.info("Adding option for dlf-paimon catalog");
+        LOG.info("forwardDlfOptions " + flinkConfig);
         if (RESTCatalogFactory.IDENTIFIER.equals(catalogOptions.get(CatalogOptions.METASTORE.key()))
                 && catalogOptions
                         .getOptional(RESTCatalogOptions.TOKEN_PROVIDER)
@@ -136,7 +140,7 @@ public class FlinkCatalogFactory implements org.apache.flink.table.factories.Cat
                     tokenPath = tokenDir + "/" + convertRoleSessionName2TokenFileName(userName);
                 }
             }
-            //            LOG.info("Use rest catalog and tokenPath is [{}]", tokenPath);
+            LOG.info("Use rest catalog and tokenPath is " + tokenPath);
             catalogOptions.set(RESTCatalogOptions.DLF_TOKEN_PATH.key(), tokenPath);
         }
     }
