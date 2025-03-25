@@ -181,14 +181,19 @@ public class CatalogUtils {
             throws Catalog.TableNotExistException {
         long start = System.currentTimeMillis();
         if (SYSTEM_DATABASE_NAME.equals(identifier.getDatabaseName())) {
-            return CatalogUtils.createGlobalSystemTable(identifier.getTableName(), catalog);
+            Table sys = CatalogUtils.createGlobalSystemTable(identifier.getTableName(), catalog);
+            long end = System.currentTimeMillis();
+            LOG.info("[loadTable-debug] createGlobalSystemTable cost {} ms", start - end);
+            LOG.info(
+                    "[loadTable-debug] createGlobalSystemTable get Table {}, opt {}",
+                    sys.fullName(),
+                    sys.options());
+            return sys;
         }
-        long end = System.currentTimeMillis();
-        LOG.info("[loadTable-debug] createGlobalSystemTable cost {} ms", start - end);
 
         start = System.currentTimeMillis();
         TableMetadata metadata = metadataLoader.load(identifier);
-        end = System.currentTimeMillis();
+        long end = System.currentTimeMillis();
         LOG.info("[loadTable-debug] metadataLoader.load cost {} ms", start - end);
 
         TableSchema schema = metadata.schema();

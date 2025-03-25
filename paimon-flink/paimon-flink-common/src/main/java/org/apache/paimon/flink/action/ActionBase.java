@@ -78,6 +78,8 @@ public abstract class ActionBase implements Action {
     }
 
     protected FlinkCatalog initFlinkCatalog() {
+        FlinkCatalogFactory.forwardDlfOptions(env.getConfiguration(), catalogOptions);
+
         return FlinkCatalogFactory.createCatalog(catalogName, catalog, catalogOptions);
     }
 
