@@ -133,6 +133,13 @@ public class FileStoreTableFactory {
                                 fileIO, tablePath, tableSchema, catalogEnvironment)
                         : new PrimaryKeyFileStoreTable(
                                 fileIO, tablePath, tableSchema, catalogEnvironment);
-        return table.copy(dynamicOptions.toMap());
+
+        long start = System.currentTimeMillis();
+        FileStoreTable tableWithDynamicOptions = table.copy(dynamicOptions.toMap());
+        long end = System.currentTimeMillis();
+        LOG.info(
+                "[loadTable-debug] FileStoreTableFactory.createWithoutFallbackBranch table.copy cost {} ms",
+                end - start);
+        return tableWithDynamicOptions;
     }
 }

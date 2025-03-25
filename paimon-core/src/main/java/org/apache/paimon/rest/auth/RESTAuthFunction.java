@@ -18,11 +18,16 @@
 
 package org.apache.paimon.rest.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.function.Function;
 
 /** The function used to generate auth header for the rest request. */
 public class RESTAuthFunction implements Function<RESTAuthParameter, Map<String, String>> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RESTAuthFunction.class);
 
     private final Map<String, String> initHeader;
     private final AuthSession authSession;
@@ -35,7 +40,12 @@ public class RESTAuthFunction implements Function<RESTAuthParameter, Map<String,
     @Override
     public Map<String, String> apply(RESTAuthParameter restAuthParameter) {
         if (authSession != null) {
-            return authSession.getAuthProvider().header(initHeader, restAuthParameter);
+            long start = System.currentTimeMillis();
+            Map<String, String> maps =
+                    authSession.getAuthProvider().header(initHeader, restAuthParameter);
+            long end = System.currentTimeMillis();
+            LOG.info("[loadTable-debug] Auth header cost: {} ms", end - start);
+            return maps;
         }
         return initHeader;
     }

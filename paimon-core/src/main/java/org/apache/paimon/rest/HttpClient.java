@@ -34,6 +34,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -49,6 +51,8 @@ import static org.apache.paimon.rest.RESTObjectMapper.OBJECT_MAPPER;
 
 /** HTTP client for REST catalog. */
 public class HttpClient implements RESTClient {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RESTAuthFunction.class);
 
     private static final OkHttpClient HTTP_CLIENT =
             new OkHttpClient.Builder()
@@ -202,7 +206,11 @@ public class HttpClient implements RESTClient {
                 errorHandler.accept(error);
             }
             if (responseType != null && responseBodyStr != null) {
-                return OBJECT_MAPPER.readValue(responseBodyStr, responseType);
+                long start = System.currentTimeMillis();
+                T t = OBJECT_MAPPER.readValue(responseBodyStr, responseType);
+                long end = System.currentTimeMillis();
+                LOG.info("[loadTable-debug] rest response deserialize cost {} ms", end - start);
+                return t;
             } else if (responseType == null) {
                 return null;
             } else {

@@ -67,6 +67,9 @@ import org.apache.paimon.utils.TagManager;
 
 import org.apache.paimon.shade.caffeine2.com.github.benmanes.caffeine.cache.Cache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nullable;
 
 import java.io.IOException;
@@ -86,6 +89,8 @@ import static org.apache.paimon.utils.Preconditions.checkArgument;
 /** Abstract {@link FileStoreTable}. */
 abstract class AbstractFileStoreTable implements FileStoreTable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractFileStoreTable.class);
+
     private static final long serialVersionUID = 1L;
 
     private static final String WATERMARK_PREFIX = "watermark-";
@@ -104,6 +109,7 @@ abstract class AbstractFileStoreTable implements FileStoreTable {
             Path path,
             TableSchema tableSchema,
             CatalogEnvironment catalogEnvironment) {
+        long start = System.currentTimeMillis();
         this.fileIO = fileIO;
         this.path = path;
         if (!tableSchema.options().containsKey(PATH.key())) {
@@ -114,6 +120,8 @@ abstract class AbstractFileStoreTable implements FileStoreTable {
         }
         this.tableSchema = tableSchema;
         this.catalogEnvironment = catalogEnvironment;
+        long end = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] AbstractFileStoreTable cost {} ms", end - start);
     }
 
     public String currentBranch() {
