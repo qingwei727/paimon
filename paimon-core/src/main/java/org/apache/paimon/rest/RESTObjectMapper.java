@@ -18,16 +18,18 @@
 
 package org.apache.paimon.rest;
 
-import org.apache.paimon.types.DataField;
-import org.apache.paimon.types.DataType;
-import org.apache.paimon.types.DataTypeJsonParser;
-
+import org.apache.paimon.rest.responses.ConfigResponse;
+import org.apache.paimon.rest.responses.GetTableResponse;
+import org.apache.paimon.rest.responses.ListDatabasesResponse;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.Module;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.paimon.types.DataField;
+import org.apache.paimon.types.DataType;
+import org.apache.paimon.types.DataTypeJsonParser;
 
 import static org.apache.paimon.utils.JsonSerdeUtil.registerJsonObjects;
 
@@ -42,7 +44,18 @@ public class RESTObjectMapper {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.registerModule(createPaimonRestJacksonModule());
         mapper.registerModule(new JavaTimeModule());
+        preWarm(mapper, ConfigResponse.class);
+        preWarm(mapper, GetTableResponse.class);
+        preWarm(mapper, ListDatabasesResponse.class);
         return mapper;
+    }
+
+    private static <T> void preWarm (ObjectMapper mapper, Class<T> type) {
+        try {
+            mapper.readValue("{}", type);
+        } catch (Exception e) {
+
+        }
     }
 
     private static Module createPaimonRestJacksonModule() {

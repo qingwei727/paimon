@@ -71,7 +71,10 @@ public class ParquetFileFormat extends FileFormat {
 
     @Override
     public void validateDataFields(RowType rowType) {
+        long start = System.currentTimeMillis();
         ParquetSchemaConverter.convertToParquetMessageType(rowType);
+        long end = System.currentTimeMillis();
+//        System.err.println("ParquetSchemaConverter cost: " + (end - start));
     }
 
     @Override

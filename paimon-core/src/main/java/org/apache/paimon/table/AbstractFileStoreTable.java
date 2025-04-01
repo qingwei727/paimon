@@ -35,6 +35,7 @@ import org.apache.paimon.predicate.Predicate;
 import org.apache.paimon.schema.SchemaManager;
 import org.apache.paimon.schema.SchemaValidation;
 import org.apache.paimon.schema.TableSchema;
+import org.apache.paimon.shade.caffeine2.com.github.benmanes.caffeine.cache.Cache;
 import org.apache.paimon.stats.Statistics;
 import org.apache.paimon.table.sink.DynamicBucketRowKeyExtractor;
 import org.apache.paimon.table.sink.FixedBucketRowKeyExtractor;
@@ -64,14 +65,10 @@ import org.apache.paimon.utils.SnapshotManager;
 import org.apache.paimon.utils.SnapshotNotExistException;
 import org.apache.paimon.utils.StringUtils;
 import org.apache.paimon.utils.TagManager;
-
-import org.apache.paimon.shade.caffeine2.com.github.benmanes.caffeine.cache.Cache;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
@@ -295,8 +292,16 @@ abstract class AbstractFileStoreTable implements FileStoreTable {
 
     @Override
     public FileStoreTable copy(Map<String, String> dynamicOptions) {
+        long start = System.currentTimeMillis();
         checkImmutability(dynamicOptions);
-        return copyInternal(dynamicOptions, true);
+        long end = System.currentTimeMillis();
+        LOG.info("Immutability check for table {} takes {} ms", fullName(), (end - start));
+
+        start = System.currentTimeMillis();
+        FileStoreTable table = copyInternal(dynamicOptions, true);
+        end = System.currentTimeMillis();
+        LOG.info("Copy table takes {} ms", (end - start));
+        return table;
     }
 
     @Override
@@ -327,6 +332,7 @@ abstract class AbstractFileStoreTable implements FileStoreTable {
         Map<String, String> options = new HashMap<>(tableSchema.options());
 
         // merge non-null dynamic options into schema.options
+        long startTime = System.currentTimeMillis();
         dynamicOptions.forEach(
                 (k, v) -> {
                     if (v == null) {
@@ -335,6 +341,8 @@ abstract class AbstractFileStoreTable implements FileStoreTable {
                         options.put(k, v);
                     }
                 });
+        long endTime = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] AbstractFileStoreTable.copyInternal forEach cost {} ms", endTime - startTime);
 
         Options newOptions = Options.fromMap(options);
 
@@ -346,16 +354,21 @@ abstract class AbstractFileStoreTable implements FileStoreTable {
 
         // copy a new table schema to contain dynamic options
         TableSchema newTableSchema = tableSchema.copy(newOptions.toMap());
-
         if (tryTimeTravel) {
             // see if merged options contain time travel option
             newTableSchema = tryTimeTravel(newOptions).orElse(newTableSchema);
         }
+        startTime = System.currentTimeMillis();
 
         // validate schema with new options
         SchemaValidation.validateTableSchema(newTableSchema);
 
-        return copy(newTableSchema);
+        endTime = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] AbstractFileStoreTable.copyInternal validateTableSchema cost {} ms", endTime - startTime);
+
+        FileStoreTable fileStoreTable = copy(newTableSchema);
+
+        return fileStoreTable;
     }
 
     @Override

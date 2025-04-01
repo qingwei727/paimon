@@ -18,6 +18,7 @@
 
 package org.apache.paimon.format.orc;
 
+import org.apache.orc.TypeDescription;
 import org.apache.paimon.annotation.VisibleForTesting;
 import org.apache.paimon.table.SpecialFields;
 import org.apache.paimon.types.ArrayType;
@@ -30,17 +31,21 @@ import org.apache.paimon.types.MapType;
 import org.apache.paimon.types.RowType;
 import org.apache.paimon.types.VarCharType;
 
-import org.apache.orc.TypeDescription;
-
 /** Util for orc types. */
 public class OrcTypeUtil {
 
     public static final String PAIMON_ORC_FIELD_ID_KEY = "paimon.id";
 
     public static TypeDescription convertToOrcSchema(RowType rowType) {
+        long start = System.currentTimeMillis();
         TypeDescription struct = TypeDescription.createStruct();
+        long end = System.currentTimeMillis();
+        System.err.println("convertToOrcSchema cost: " + (end - start));
         for (DataField dataField : rowType.getFields()) {
+            start = System.currentTimeMillis();
             TypeDescription child = convertToOrcType(dataField.type(), dataField.id(), 0);
+            end = System.currentTimeMillis();
+            System.err.println("convertToOrcSchema cost: " + (end - start) + ", dataField=" + dataField.name());
             struct.addField(dataField.name(), child);
         }
         return struct;

@@ -30,6 +30,9 @@ import org.apache.paimon.partition.Partition;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.schema.TableSchema;
+import org.apache.paimon.shade.guava30.com.google.common.collect.ImmutableMap;
+import org.apache.paimon.shade.guava30.com.google.common.collect.Lists;
+import org.apache.paimon.shade.guava30.com.google.common.collect.Maps;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.FormatTable;
 import org.apache.paimon.table.Table;
@@ -43,11 +46,6 @@ import org.apache.paimon.types.DataTypes;
 import org.apache.paimon.types.RowType;
 import org.apache.paimon.view.View;
 import org.apache.paimon.view.ViewImpl;
-
-import org.apache.paimon.shade.guava30.com.google.common.collect.ImmutableMap;
-import org.apache.paimon.shade.guava30.com.google.common.collect.Lists;
-import org.apache.paimon.shade.guava30.com.google.common.collect.Maps;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,6 +82,8 @@ public abstract class CatalogTestBase {
     protected FileIO fileIO;
     protected Catalog catalog;
 
+    static Map<String, String> options = new HashMap() {{put("file.format", "orc"); }};
+//    static Map<String, String> options = new HashMap<>();
     protected static final Schema DEFAULT_TABLE_SCHEMA =
             new Schema(
                     Lists.newArrayList(
@@ -92,7 +92,7 @@ public abstract class CatalogTestBase {
                             new DataField(2, "col2", DataTypes.STRING())),
                     Collections.emptyList(),
                     Collections.emptyList(),
-                    Maps.newHashMap(),
+                    options,
                     "");
 
     @BeforeEach

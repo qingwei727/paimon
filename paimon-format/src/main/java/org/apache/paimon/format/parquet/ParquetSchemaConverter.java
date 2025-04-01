@@ -32,7 +32,6 @@ import org.apache.paimon.types.MultisetType;
 import org.apache.paimon.types.RowType;
 import org.apache.paimon.types.TimestampType;
 import org.apache.paimon.utils.Pair;
-
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
@@ -61,7 +60,13 @@ public class ParquetSchemaConverter {
 
     /** Convert paimon {@link RowType} to parquet {@link MessageType}. */
     public static MessageType convertToParquetMessageType(RowType rowType) {
-        return new MessageType(PAIMON_SCHEMA, convertToParquetTypes(rowType));
+        long start = System.currentTimeMillis();
+
+        MessageType messageType = new MessageType(PAIMON_SCHEMA, convertToParquetTypes(rowType));
+
+        long end = System.currentTimeMillis();
+        System.err.println("ParquetSchemaConverter cost: " + (end - start));
+        return messageType;
     }
 
     private static Type[] convertToParquetTypes(RowType rowType) {
@@ -76,15 +81,20 @@ public class ParquetSchemaConverter {
     }
 
     private static Type convertToParquetType(String name, DataType type, int fieldId, int depth) {
+        long start = System.currentTimeMillis();
         Type.Repetition repetition =
                 type.isNullable() ? Type.Repetition.OPTIONAL : Type.Repetition.REQUIRED;
+        System.out.println("convertToParquetType cnt " + type.getTypeRoot());
         switch (type.getTypeRoot()) {
             case CHAR:
             case VARCHAR:
-                return Types.primitive(PrimitiveType.PrimitiveTypeName.BINARY, repetition)
+                Type type1 = Types.primitive(PrimitiveType.PrimitiveTypeName.BINARY, repetition)
                         .as(LogicalTypeAnnotation.stringType())
                         .named(name)
                         .withId(fieldId);
+                long end = System.currentTimeMillis();
+                System.err.println("convertToParquetType cost: " + (end - start) + ", type "  + type.getTypeRoot());
+                return type1;
             case BOOLEAN:
                 return Types.primitive(PrimitiveType.PrimitiveTypeName.BOOLEAN, repetition)
                         .named(name)
@@ -125,7 +135,10 @@ public class ParquetSchemaConverter {
                         .named(name)
                         .withId(fieldId);
             case INTEGER:
-                return Types.primitive(INT32, repetition).named(name).withId(fieldId);
+                Type tmp = Types.primitive(INT32, repetition).named(name).withId(fieldId);
+                end = System.currentTimeMillis();
+                System.out.println("convertToParquetType cost " + (end - start) + ", type "  + type.getTypeRoot());
+                return tmp;
             case BIGINT:
                 return Types.primitive(INT64, repetition).named(name).withId(fieldId);
             case FLOAT:
@@ -229,9 +242,12 @@ public class ParquetSchemaConverter {
                                                 Type.Repetition.REQUIRED)
                                         .named(Variant.METADATA))
                         .named(name);
-            default:
-                throw new UnsupportedOperationException("Unsupported type: " + type);
+//            default:
+//                throw new UnsupportedOperationException("Unsupported type: " + type);
         }
+        long end = System.currentTimeMillis();
+        System.out.println("convertToParquetType cost: " + (end - start));
+        throw new UnsupportedOperationException("Unsupported type: " + type);
     }
 
     private static Type createTimestampWithLogicalType(

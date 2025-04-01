@@ -40,6 +40,8 @@ import org.apache.paimon.types.RowType;
 import org.apache.paimon.types.TimestampType;
 import org.apache.paimon.types.VarCharType;
 import org.apache.paimon.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,6 +88,7 @@ import static org.apache.paimon.utils.Preconditions.checkState;
 
 /** Validation utils for {@link TableSchema}. */
 public class SchemaValidation {
+    private static final Logger LOG = LoggerFactory.getLogger(SchemaValidation.class);
 
     public static final List<Class<? extends DataType>> PRIMARY_KEY_UNSUPPORTED_LOGICAL_TYPES =
             Arrays.asList(MapType.class, ArrayType.class, RowType.class, MultisetType.class);
@@ -109,7 +112,10 @@ public class SchemaValidation {
 
         validateStartupMode(options);
 
+        long start = System.currentTimeMillis();
         validateFieldsPrefix(schema, options);
+        long end = System.currentTimeMillis();
+        System.err.println("validateFieldsPrefix cost: " + (end - start));
 
         validateSequenceField(schema, options);
 
@@ -153,7 +159,11 @@ public class SchemaValidation {
 
         FileFormat fileFormat =
                 FileFormat.fromIdentifier(options.formatType(), new Options(schema.options()));
+
+        long startTime = System.currentTimeMillis();
         fileFormat.validateDataFields(new RowType(schema.fields()));
+        long endTime = System.currentTimeMillis();
+        LOG.info("[loadTable-debug] schema validateTableSchema cost {} ms", endTime - startTime);
 
         // Check column names in schema
         schema.fieldNames()
