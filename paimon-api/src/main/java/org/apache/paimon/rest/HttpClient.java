@@ -19,6 +19,7 @@
 package org.apache.paimon.rest;
 
 import org.apache.paimon.annotation.VisibleForTesting;
+import org.apache.paimon.options.Options;
 import org.apache.paimon.rest.auth.RESTAuthFunction;
 import org.apache.paimon.rest.auth.RESTAuthParameter;
 import org.apache.paimon.rest.exceptions.RESTException;
@@ -27,6 +28,7 @@ import org.apache.paimon.utils.StringUtils;
 
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 
+import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -40,6 +42,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static okhttp3.ConnectionSpec.CLEARTEXT;
@@ -51,16 +54,7 @@ import static org.apache.paimon.rest.LoggingInterceptor.REQUEST_ID_KEY;
 /** HTTP client for REST catalog. */
 public class HttpClient implements RESTClient {
 
-    private static final OkHttpClient HTTP_CLIENT =
-            new OkHttpClient.Builder()
-                    .retryOnConnectionFailure(true)
-                    .connectionSpecs(Arrays.asList(MODERN_TLS, COMPATIBLE_TLS, CLEARTEXT))
-                    .addInterceptor(new ExponentialHttpRetryInterceptor(5))
-                    .addInterceptor(new LoggingInterceptor())
-                    .connectTimeout(Duration.ofMinutes(3))
-                    .readTimeout(Duration.ofMinutes(3))
-                    .writeTimeout(Duration.ofMinutes(3))
-                    .build();
+    private static OkHttpClient HTTP_CLIENT;
 
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
 
@@ -84,6 +78,42 @@ public class HttpClient implements RESTClient {
         }
         this.uri = serverUri;
         this.errorHandler = DefaultErrorHandler.getInstance();
+    }
+
+    public HttpClient(String uri, Options options) {
+        String serverUri;
+        if (StringUtils.isNotEmpty(uri)) {
+            if (uri.endsWith("/")) {
+                serverUri = uri.substring(0, uri.length() - 1);
+            } else {
+                serverUri = uri;
+            }
+            if (!uri.startsWith("http://") && !uri.startsWith("https://")) {
+                serverUri = String.format("http://%s", serverUri);
+            }
+        } else {
+            throw new IllegalArgumentException("uri is empty which must be defined.");
+        }
+        this.uri = serverUri;
+        this.errorHandler = DefaultErrorHandler.getInstance();
+
+        HTTP_CLIENT =
+                new OkHttpClient.Builder()
+                        .retryOnConnectionFailure(true)
+                        .connectionSpecs(Arrays.asList(MODERN_TLS, COMPATIBLE_TLS, CLEARTEXT))
+                        .addInterceptor(new ExponentialHttpRetryInterceptor(5))
+                        .addInterceptor(new LoggingInterceptor())
+                        .connectTimeout(
+                                Duration.ofMinutes(options.getInteger("debug.connectTimeout", 3)))
+                        .readTimeout(Duration.ofMinutes(options.getInteger("debug.readTimeout", 3)))
+                        .writeTimeout(
+                                Duration.ofMinutes(options.getInteger("debug.writeTimeout", 3)))
+                        .connectionPool(
+                                new ConnectionPool(
+                                        options.getInteger("debug.maxIdleConnections", 10),
+                                        options.getInteger("debug.keepAliveDuration", 1),
+                                        TimeUnit.MINUTES))
+                        .build();
     }
 
     @VisibleForTesting
