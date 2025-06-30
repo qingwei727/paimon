@@ -54,7 +54,7 @@ import static org.apache.paimon.rest.LoggingInterceptor.REQUEST_ID_KEY;
 /** HTTP client for REST catalog. */
 public class HttpClient implements RESTClient {
 
-    private static OkHttpClient HTTP_CLIENT;
+    private static OkHttpClient httpClient;
 
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
 
@@ -97,7 +97,7 @@ public class HttpClient implements RESTClient {
         this.uri = serverUri;
         this.errorHandler = DefaultErrorHandler.getInstance();
 
-        HTTP_CLIENT =
+        httpClient =
                 new OkHttpClient.Builder()
                         .retryOnConnectionFailure(true)
                         .connectionSpecs(Arrays.asList(MODERN_TLS, COMPATIBLE_TLS, CLEARTEXT))
@@ -228,7 +228,7 @@ public class HttpClient implements RESTClient {
     }
 
     private <T extends RESTResponse> T exec(Request request, Class<T> responseType) {
-        try (Response response = HTTP_CLIENT.newCall(request).execute()) {
+        try (Response response = httpClient.newCall(request).execute()) {
             String responseBodyStr = response.body() != null ? response.body().string() : null;
             if (!response.isSuccessful()) {
                 ErrorResponse error;
