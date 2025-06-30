@@ -76,9 +76,6 @@ class MockRESTCatalogTest extends RESTCatalogTest {
                         AuthProviderEnum.BEAR.identifier());
         this.restCatalog = initCatalog(false);
         this.catalog = restCatalog;
-
-        // test retry commit
-        RESTCatalogServer.commitSuccessThrowException = true;
     }
 
     @AfterEach
