@@ -104,10 +104,11 @@ public class HttpClient implements RESTClient {
                         .addInterceptor(new ExponentialHttpRetryInterceptor(5))
                         .addInterceptor(new LoggingInterceptor())
                         .connectTimeout(
-                                Duration.ofMinutes(options.getInteger("debug.connectTimeout", 3)))
-                        .readTimeout(Duration.ofMinutes(options.getInteger("debug.readTimeout", 3)))
+                                Duration.ofSeconds(options.getInteger("debug.connectTimeout", 30)))
+                        .readTimeout(
+                                Duration.ofSeconds(options.getInteger("debug.readTimeout", 30)))
                         .writeTimeout(
-                                Duration.ofMinutes(options.getInteger("debug.writeTimeout", 3)))
+                                Duration.ofSeconds(options.getInteger("debug.writeTimeout", 30)))
                         .connectionPool(
                                 new ConnectionPool(
                                         options.getInteger("debug.maxIdleConnections", 10),
