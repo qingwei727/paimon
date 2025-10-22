@@ -302,13 +302,22 @@ class MockRESTCatalogTest extends RESTCatalogTest {
         for (Map.Entry<String, String> entry : this.authMap.entrySet()) {
             options.set(entry.getKey(), entry.getValue());
         }
-        options.set(CatalogOptions.WAREHOUSE.key(), restWarehouse);
-        options.set(RESTCatalogOptions.URI, restCatalogServer.getUrl());
+        options.set(CatalogOptions.WAREHOUSE.key(), "bennett_e2e_test");
+        options.set(RESTCatalogOptions.URI, "http://pre1-test-bennett.aliyun-inc.com");
         String path =
                 enableDataToken
                         ? dataPath.replaceFirst("file", RESTFileIOTestLoader.SCHEME)
                         : dataPath;
         options.set(RESTTestFileIO.DATA_PATH_CONF_KEY, path);
+        options.set(RESTCatalogOptions.TOKEN_PROVIDER, "dlf");
+        options.set(RESTCatalogOptions.DLF_ACCESS_KEY_ID, "xxx");
+        options.set(RESTCatalogOptions.DLF_ACCESS_KEY_SECRET, "xxx");
+        options.set(RESTCatalogOptions.DLF_REGION, "cn-hangzhou");
+        options.set(RESTCatalogOptions.DLF_OSS_ENDPOINT, "oss-" + "cn-hangzhou" + ".aliyuncs.com");
+        options.set("fs.oss.accessKeyId", "xxx");
+        options.set("fs.oss.accessKeySecret", "xxx");
+        options.set("fs.oss.endpoint", "oss-" + "cn-hangzhou" + ".aliyuncs.com");
+        options.set(RESTTokenFileIO.DATA_TOKEN_ENABLED, true);
         return new RESTCatalog(CatalogContext.create(options));
     }
 }

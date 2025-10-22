@@ -276,6 +276,32 @@ under the License.
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-jindo</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun.jindodata</groupId>
+            <artifactId>jindo-core</artifactId>
+            <version>6.10.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun.jindodata</groupId>
+            <artifactId>jindo-core-macos-11_0-x86_64</artifactId>
+            <version>6.10.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun.jindodata</groupId>
+            <artifactId>jindo-sdk</artifactId>
+            <version>6.10.2</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
